@@ -34,35 +34,11 @@
             "default": "gpt-3.5-turbo",
             "enumItemLabels": [
               "GPT-3.5 Turbo",
-              "GPT-4",
-              "Davinci",
-              "Ada",
-              "Babbage",
-              "Curie",
-              "Davinci-Instruct-beta",
-              "Davinci-codex",
-              "Davinci-codex-beta",
-              "Davinci-instruct-beta",
-              "Davinci-beta",
-              "Ada-beta",
-              "Babbage-beta",
-              "Curie-beta"
+              "GPT-4"
             ],
             "enum": [
               "gpt-3.5-turbo",
-              "gpt-4",
-              "davinci",
-              "ada",
-              "babbage",
-              "curie",
-              "davinci-instruct-beta",
-              "davinci-codex",
-              "davinci-codex-beta",
-              "davinci-instruct-beta",
-              "davinci-beta",
-              "ada-beta",
-              "babbage-beta",
-              "curie-beta"
+              "gpt-4"
             ]
           },
           "chatgptInline.notifier": {
@@ -91,6 +67,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.4",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
@@ -98,6 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
     "@vscode/test-electron": "^2.3.0",
+    "chai": "^4.3.7",
     "eslint": "^8.36.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",

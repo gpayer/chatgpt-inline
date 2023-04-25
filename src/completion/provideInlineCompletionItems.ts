@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { openaiCompletion } from "./openai";
 
+let debounceTime = 0;
+
 export const provideInlineCompletionItems = async (
   document: vscode.TextDocument,
   position: vscode.Position,
@@ -9,6 +11,20 @@ export const provideInlineCompletionItems = async (
 ): Promise<
   vscode.InlineCompletionList | vscode.InlineCompletionItem[] | undefined
 > => {
+  // if debounce time is not reached, wait until it is reached or token.isCancellationRequested triggered
+  if (debounceTime > 0) {
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, debounceTime);
+      token.onCancellationRequested(() => {
+        clearTimeout(timeout);
+        resolve(undefined);
+      });
+      debounceTime = 0;
+    });
+  }
+
+  debounceTime = 1000;
+
   const maxLines = 10; // TODO: get this from configuration
 
   const lineNumbers: number[] = [];
@@ -28,7 +44,18 @@ export const provideInlineCompletionItems = async (
   const currLine = document.lineAt(position.line).text;
 
   // create suggestion from completion api
-  const suggestion = await openaiCompletion(codeSnippet);
+  let suggestion = "";
+  const runTime = await new Promise<number>((resolve) => {
+    const start = Date.now();
+    openaiCompletion(codeSnippet).then((suggestion) => {
+      resolve(Date.now() - start);
+    });
+  });
+  debounceTime -= runTime;
+  if (debounceTime < 0) {
+    debounceTime = 0;
+  }
+  console.log("runTime:", runTime, "ms");
   if (!suggestion) {
     return undefined;
   }
@@ -46,6 +73,7 @@ export const provideInlineCompletionItems = async (
   //     completionItem.filterText = undefined;
   //   }
   const filterText = currLine ? currLine + suggestion : undefined;
+  completionItem.filterText = filterText;
 
   completionItem.range = new vscode.Range(
     new vscode.Position(position.line, 0),
@@ -62,16 +90,23 @@ export const provideInlineCompletionItems = async (
     currLine.length
   );
 
+  if (token.isCancellationRequested) {
+    return undefined;
+  }
+
   // return completion item
   return [completionItem];
 };
 
 // TODO: might not be necessary. anyways, unit tests are needed
-function findNotCommonStart(currLine: string, suggestion: string): string {
+export function findNotCommonStart(
+  currLine: string,
+  suggestion: string
+): string {
   let filterText = currLine;
 
   // Check for suffix and prefix match
-  for (let i = 1; i < currLine.length; i++) {
+  for (let i = 0; i < currLine.length; i++) {
     if (suggestion.startsWith(currLine.substring(i))) {
       filterText = currLine.substring(0, i);
       break;

@@ -32,7 +32,7 @@ export async function openaiCompletion(
           { role: "system", content: systemMessage },
           { role: "user", content: codeSnippet },
         ],
-        max_tokens: 64,
+        max_tokens: 16,
         temperature: 0.3,
       },
       {

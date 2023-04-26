@@ -25,7 +25,7 @@ export const provideInlineCompletionItems = async (
 
   debounceTime = 1000;
 
-  const maxLines = 10; // TODO: get this from configuration
+  const maxLines = 30; // TODO: get this from configuration
 
   const lineNumbers: number[] = [];
   const start = Math.max(0, position.line - maxLines);
@@ -38,16 +38,20 @@ export const provideInlineCompletionItems = async (
   });
 
   const codeSnippet = lines.join("\n");
-  console.log("codeSnippet:", codeSnippet);
+  // console.log("====================================");
+  // console.log("codeSnippet:", codeSnippet);
 
   // retrieve current line
   const currLine = document.lineAt(position.line).text;
+  console.log("currLine:", currLine);
 
   // create suggestion from completion api
   let suggestion = "";
   const runTime = await new Promise<number>((resolve) => {
     const start = Date.now();
-    openaiCompletion(codeSnippet).then((suggestion) => {
+    openaiCompletion(codeSnippet).then((sugg) => {
+      suggestion = sugg || "";
+      suggestion = suggestion.split("\n")[0];
       resolve(Date.now() - start);
     });
   });
@@ -66,28 +70,37 @@ export const provideInlineCompletionItems = async (
 
   // find out if a suffix of currLine is a prefix of suggestion
   // if so, set filterText to the suffix, else set it to currLine
-  //   if (currLine) {
-  //     completionItem.filterText =
-  //       findNotCommonStart(currLine, suggestion) + suggestion;
-  //   } else {
-  //     completionItem.filterText = undefined;
-  //   }
-  const filterText = currLine ? currLine + suggestion : undefined;
-  completionItem.filterText = filterText;
-
-  completionItem.range = new vscode.Range(
-    new vscode.Position(position.line, 0),
-    new vscode.Position(position.line, currLine.length || 1)
+  if (currLine) {
+    completionItem.filterText =
+      findNotCommonStart(currLine, suggestion) + suggestion;
+  } else {
+    completionItem.filterText = undefined;
+  }
+  // const filterText = currLine ? currLine + suggestion : undefined;
+  // completionItem.filterText = filterText;
+  console.log(
+    "filterText:",
+    completionItem.filterText,
+    "insertText:",
+    completionItem.insertText
   );
+
+  // completionItem.range = completionItem.filterText
+  //   ? new vscode.Range(
+  //       new vscode.Position(position.line, 0),
+  //       new vscode.Position(position.line, completionItem.filterText.length)
+  //     )
+  //   : undefined;
+
   console.log(
     "completionItem:",
     completionItem,
     "replacement range: line",
     position.line,
     "from",
-    0,
+    completionItem.range?.start.character,
     "to",
-    currLine.length
+    completionItem.range?.end.character
   );
 
   if (token.isCancellationRequested) {
@@ -98,7 +111,6 @@ export const provideInlineCompletionItems = async (
   return [completionItem];
 };
 
-// TODO: might not be necessary. anyways, unit tests are needed
 export function findNotCommonStart(
   currLine: string,
   suggestion: string
